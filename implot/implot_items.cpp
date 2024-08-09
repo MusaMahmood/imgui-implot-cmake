@@ -1771,6 +1771,14 @@ void PlotStairsG(const char* label_id, ImPlotGetter getter_func, void* data, int
 // [SECTION] PlotShaded
 //-----------------------------------------------------------------------------
 
+void PlotShadedF(const char* label_id, const float* xs, const float* ys1, const float* ys2, int count, ImPlotShadedFlags flags, int offset, int stride) {
+    PlotShaded(label_id, xs, ys1, ys2, count, flags, offset, stride);
+}
+
+void PlotShadedD(const char* label_id, const double* xs, const double* ys1, const double* ys2, int count, ImPlotShadedFlags flags, int offset, int stride) {
+    PlotShaded(label_id, xs, ys1, ys2, count, flags, offset, stride);
+}
+
 template <typename Getter1, typename Getter2>
 void PlotShadedEx(const char* label_id, const Getter1& getter1, const Getter2& getter2, ImPlotShadedFlags flags) {
     if (BeginItemEx(label_id, Fitter2<Getter1,Getter2>(getter1,getter2), flags, ImPlotCol_Fill)) {
