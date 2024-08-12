@@ -58,25 +58,24 @@ configure_msvc_runtime ()
 
 set(
     SRC_FILES 
-    imgui/imgui.cpp
-    imgui/imgui_widgets.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_tables.cpp
-    imgui/imgui_demo.cpp
-    implot/implot.cpp
-    implot/implot_items.cpp
-    implot/implot_demo.cpp
-    imgui/backends/imgui_impl_glfw.cpp
-    imgui/backends/imgui_impl_opengl3.cpp
-    imgui/backends/imgui_impl_dx11.cpp
-    imgui/backends/imgui_impl_win32.cpp
+    imgui.cpp
+    imgui_widgets.cpp
+    imgui_draw.cpp
+    imgui_tables.cpp
+    imgui_demo.cpp
+    implot.cpp
+    implot_items.cpp
+    implot_demo.cpp
+    backends/imgui_impl_glfw.cpp
+    backends/imgui_impl_opengl3.cpp
+    backends/imgui_impl_dx11.cpp
+    backends/imgui_impl_win32.cpp
 )
 
 set(
     INCLUDE_DIRS
-    ${PROJECT_SOURCE_DIR}/imgui
-    ${PROJECT_SOURCE_DIR}/implot
-    ${PROJECT_SOURCE_DIR}/imgui/backends
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/backends
     #${CMAKE_HOME_DIRECTORY}/third_party
 )
 
