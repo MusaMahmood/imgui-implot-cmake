@@ -4439,7 +4439,7 @@ void ImGui::SetClipboardText(const char* text)
         g.IO.SetClipboardTextFn(g.IO.ClipboardUserData, text);
 }
 
-const char* ImGui::GetVersion()
+const char* ImGui::GetImGuiVersion()
 {
     return IMGUI_VERSION;
 }
@@ -20198,7 +20198,7 @@ void ImGui::ShowMetricsWindow(bool* p_open)
     DebugBreakClearData();
 
     // Basic info
-    Text("Dear ImGui %s", GetVersion());
+    Text("Dear ImGui %s", GetImGuiVersion());
     Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     Text("%d vertices, %d indices (%d triangles)", io.MetricsRenderVertices, io.MetricsRenderIndices, io.MetricsRenderIndices / 3);
     Text("%d visible windows, %d current allocations", io.MetricsRenderWindows, g.DebugAllocInfo.TotalAllocCount - g.DebugAllocInfo.TotalFreeCount);
