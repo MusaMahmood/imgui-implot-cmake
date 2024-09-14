@@ -56,8 +56,10 @@ struct ImGui_ImplDX11_Data
     ID3D11Buffer*               pVB;
     ID3D11Buffer*               pIB;
     ID3D11VertexShader*         pVertexShader;
+    ID3D11VertexShader*         pVertexShaderLinePlot;
     ID3D11InputLayout*          pInputLayout;
     ID3D11Buffer*               pVertexConstantBuffer;
+    ID3D11Buffer*               pVertexConstantBufferLinePlot;
     ID3D11PixelShader*          pPixelShader;
     ID3D11SamplerState*         pFontSampler;
     ID3D11ShaderResourceView*   pFontTextureView;
@@ -73,6 +75,15 @@ struct ImGui_ImplDX11_Data
 struct VERTEX_CONSTANT_BUFFER_DX11
 {
     float   mvp[4][4];
+};
+
+struct VERTEX_CONSTANT_BUFFER_DX11_PLOT_LINE
+{
+    float   mvp[4][4];
+    float   PixMin[2];
+    float   M[2];
+    float   PltMin[2];
+    float   padding[2];
 };
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
@@ -260,9 +271,11 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
+
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
             const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+
             if (pcmd->UserCallback != nullptr)
             {
                 // User callback, registered via ImDrawList::AddCallback()
@@ -274,20 +287,69 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
             }
             else
             {
-                // Project scissor/clipping rectangles into framebuffer space
-                ImVec2 clip_min(pcmd->ClipRect.x - clip_off.x, pcmd->ClipRect.y - clip_off.y);
-                ImVec2 clip_max(pcmd->ClipRect.z - clip_off.x, pcmd->ClipRect.w - clip_off.y);
-                if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
-                    continue;
+                if (pcmd->Flags & ImDrawCmdFlags_LineStrip) {
+                    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+                    ctx->VSSetShader(bd->pVertexShaderLinePlot, nullptr, 0);
 
-                // Apply scissor/clipping rectangle
-                const D3D11_RECT r = { (LONG)clip_min.x, (LONG)clip_min.y, (LONG)clip_max.x, (LONG)clip_max.y };
-                ctx->RSSetScissorRects(1, &r);
+                   if (pcmd->Flags & ImDrawCmdFlags_TransformInVertexShader) {
+                        D3D11_MAPPED_SUBRESOURCE mapped_resource;
+                        if (ctx->Map(bd->pVertexConstantBufferLinePlot, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource) != S_OK)
+                            return;
+                        VERTEX_CONSTANT_BUFFER_DX11_PLOT_LINE* constant_buffer = (VERTEX_CONSTANT_BUFFER_DX11_PLOT_LINE*)mapped_resource.pData;
+                        float L = draw_data->DisplayPos.x;
+                        float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+                        float T = draw_data->DisplayPos.y;
+                        float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+                        float mvp[4][4] =
+                        {
+                            { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
+                            { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
+                            { 0.0f,         0.0f,           0.5f,       0.0f },
+                            { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
+                        };
 
-                // Bind texture, Draw
-                ID3D11ShaderResourceView* texture_srv = (ID3D11ShaderResourceView*)pcmd->GetTexID();
-                ctx->PSSetShaderResources(0, 1, &texture_srv);
-                ctx->DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
+                        float PixMin[2] = {pcmd->TransformData[0], pcmd->TransformData[1]};
+                        float M[2]      = {pcmd->TransformData[2], pcmd->TransformData[3]};
+                        float PltMin[2] = {pcmd->TransformData[4], pcmd->TransformData[5]};
+
+                        // I know that we should copy it in one function call...
+                        memcpy(&constant_buffer->mvp,    mvp,    sizeof(mvp));
+                        memcpy(&constant_buffer->PixMin, PixMin, sizeof(PixMin));
+                        memcpy(&constant_buffer->M,      M,      sizeof(M));
+                        memcpy(&constant_buffer->PltMin, PltMin, sizeof(PltMin));
+
+                        ctx->Unmap(bd->pVertexConstantBufferLinePlot, 0);
+
+                        ctx->VSSetConstantBuffers(0, 1, &bd->pVertexConstantBufferLinePlot);
+                    }
+
+                    ID3D11ShaderResourceView* texture_srv = (ID3D11ShaderResourceView*)pcmd->GetTexID();
+                    ctx->PSSetShaderResources(0, 1, &texture_srv);
+                    ctx->DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
+
+                    // reset for the rest of the draw list
+                    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                    if (pcmd->Flags & ImDrawCmdFlags_TransformInVertexShader) {
+                        ctx->VSSetShader(bd->pVertexShader, nullptr, 0);
+                        ctx->VSSetConstantBuffers(0, 1, &bd->pVertexConstantBuffer);
+                    }
+                } else {
+
+                    // Project scissor/clipping rectangles into framebuffer space
+                    ImVec2 clip_min(pcmd->ClipRect.x - clip_off.x, pcmd->ClipRect.y - clip_off.y);
+                    ImVec2 clip_max(pcmd->ClipRect.z - clip_off.x, pcmd->ClipRect.w - clip_off.y);
+                    if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+                        continue;
+
+                    // Apply scissor/clipping rectangle
+                    const D3D11_RECT r = { (LONG)clip_min.x, (LONG)clip_min.y, (LONG)clip_max.x, (LONG)clip_max.y };
+                    ctx->RSSetScissorRects(1, &r);
+
+                    // Bind texture, Draw
+                    ID3D11ShaderResourceView* texture_srv = (ID3D11ShaderResourceView*)pcmd->GetTexID();
+                    ctx->PSSetShaderResources(0, 1, &texture_srv);
+                    ctx->DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
+                }
             }
         }
         global_idx_offset += cmd_list->IdxBuffer.Size;
@@ -395,7 +457,7 @@ bool    ImGui_ImplDX11_CreateDeviceObjects()
         static const char* vertexShader =
             "cbuffer vertexBuffer : register(b0) \
             {\
-              float4x4 ProjectionMatrix; \
+              float4x4 ProjectionMatrix;\
             };\
             struct VS_INPUT\
             {\
@@ -452,6 +514,64 @@ bool    ImGui_ImplDX11_CreateDeviceObjects()
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             desc.MiscFlags = 0;
             bd->pd3dDevice->CreateBuffer(&desc, nullptr, &bd->pVertexConstantBuffer);
+        }
+
+        static const char* vertexShaderLinePlot =
+            "cbuffer vertexBuffer : register(b0) \
+            {\
+              float4x4 ProjectionMatrix;\
+              float2 PixMin;\
+              float2 M;\
+              float2 PltMin;\
+            };\
+            struct VS_INPUT\
+            {\
+              float2 pos : POSITION;\
+              float4 col : COLOR0;\
+              float2 uv  : TEXCOORD0;\
+            };\
+            \
+            struct PS_INPUT\
+            {\
+              float4 pos : SV_POSITION;\
+              float4 col : COLOR0;\
+              float2 uv  : TEXCOORD0;\
+            };\
+            \
+            PS_INPUT main(VS_INPUT input)\
+            {\
+              PS_INPUT output;\
+              float2 p = PixMin + M * (input.pos.xy - PltMin);\
+              output.pos = mul( ProjectionMatrix, float4(p, 0.f, 1.f));\
+              output.col = input.col;\
+              output.uv  = input.uv;\
+              return output;\
+            }";
+
+        ID3DBlob* vertexShaderLinePlotBlob;
+        ID3DBlob* vertexShaderLinePlotBlobError;
+        if (FAILED(D3DCompile(vertexShaderLinePlot, strlen(vertexShaderLinePlot), nullptr, nullptr, nullptr, "main", "vs_4_0", 0, 0, &vertexShaderLinePlotBlob, &vertexShaderLinePlotBlobError))) {
+            if (vertexShaderLinePlotBlobError != nullptr)
+            {
+                printf("D3D11: With message: %s\n", vertexShaderLinePlotBlobError->GetBufferPointer());
+            }
+            return false; // NB: Pass ID3DBlob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
+        }
+        if (bd->pd3dDevice->CreateVertexShader(vertexShaderLinePlotBlob->GetBufferPointer(), vertexShaderLinePlotBlob->GetBufferSize(), nullptr, &bd->pVertexShaderLinePlot) != S_OK)
+        {
+            vertexShaderLinePlotBlob->Release();
+            return false;
+        }
+
+        // Create the constant buffer
+        {
+            D3D11_BUFFER_DESC desc;
+            desc.ByteWidth = sizeof(VERTEX_CONSTANT_BUFFER_DX11_PLOT_LINE);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = 0;
+            bd->pd3dDevice->CreateBuffer(&desc, nullptr, &bd->pVertexConstantBufferLinePlot);
         }
     }
 
@@ -545,8 +665,10 @@ void    ImGui_ImplDX11_InvalidateDeviceObjects()
     if (bd->pRasterizerState)       { bd->pRasterizerState->Release(); bd->pRasterizerState = nullptr; }
     if (bd->pPixelShader)           { bd->pPixelShader->Release(); bd->pPixelShader = nullptr; }
     if (bd->pVertexConstantBuffer)  { bd->pVertexConstantBuffer->Release(); bd->pVertexConstantBuffer = nullptr; }
+    if (bd->pVertexConstantBufferLinePlot)  { bd->pVertexConstantBufferLinePlot->Release(); bd->pVertexConstantBufferLinePlot = nullptr; }
     if (bd->pInputLayout)           { bd->pInputLayout->Release(); bd->pInputLayout = nullptr; }
     if (bd->pVertexShader)          { bd->pVertexShader->Release(); bd->pVertexShader = nullptr; }
+    if (bd->pVertexShaderLinePlot)  { bd->pVertexShaderLinePlot->Release(); bd->pVertexShaderLinePlot = nullptr; }
 }
 
 bool    ImGui_ImplDX11_Init(ID3D11Device* device, ID3D11DeviceContext* device_context)

@@ -855,6 +855,9 @@ IMPLOT_API void SetNextAxesToFit();
 // Plots a standard 2D line plot.
 IMPLOT_TMP void PlotLine(const char* label_id, const T* values, int count, double xscale=1, double xstart=0, ImPlotLineFlags flags=0, int offset=0, int stride=sizeof(T));
 IMPLOT_TMP void PlotLine(const char* label_id, const T* xs, const T* ys, int count, ImPlotLineFlags flags=0, int offset=0, int stride=sizeof(T));
+
+void PlotLineExFast(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags,
+                    int offset, int stride); 
 IMPLOT_API void PlotLineG(const char* label_id, ImPlotGetter getter, void* data, int count, ImPlotLineFlags flags=0);
 
 // External bindings: 
@@ -862,6 +865,8 @@ IMPLOT_API void PlotLineF(const char* label_id, const float* values, int count, 
 IMPLOT_API void PlotLineF(const char* label_id, const float* xs, const float* ys, int count, ImPlotLineFlags flags=0, int offset=0, int stride=sizeof(float));
 IMPLOT_API void PlotLineD(const char* label_id, const double* values, int count, double xscale=1, double x0=0, int offset=0, int stride=sizeof(double));
 IMPLOT_API void PlotLineD(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags=0, int offset=0, int stride=sizeof(double));
+IMPLOT_API void PlotLineDFast(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags = 0,
+                   int offset = 0, int stride = sizeof(double));
 
 IMPLOT_API void PlotShadedF(const char* label_id, const float* xs, const float* ys1, const float* ys2, int count, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(float));
 IMPLOT_API void PlotShadedD(const char* label_id, const double* xs, const double* ys1, const double* ys2, int count, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(double));

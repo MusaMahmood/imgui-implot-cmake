@@ -1403,6 +1403,79 @@ void RenderPrimitives1(const _Getter& getter, Args... args) {
     RenderPrimitivesEx(_Renderer<_Getter>(getter,args...), draw_list, cull_rect);
 }
 
+void RenderPrimitives1Fast(const double* xs, const double* ys, int count, ImU32 col_line, float line_weight) {
+
+    ImDrawList& draw_list = *GetPlotDrawList();
+    const ImRect& cull_rect = GetCurrentPlot()->PlotRect;
+
+    draw_list.AddDrawCmd();
+
+    int prims = count - 1;
+
+    int extra_indices_to_get_to_multiple_of_six = 6 - prims % 6;
+    int extra_vertices_to_get_to_multiple_of_four = 4 - prims % 4;
+
+    ImVec2 tex_uv0 = draw_list._Data->TexUvWhitePixel;
+
+    int i_offset = 0;
+
+    while (prims > 0) {
+        int cnt = ImMin((int) prims, (int) (MaxIdx<ImDrawIdx>::Value));
+
+        draw_list.AddDrawCmd();
+        draw_list.PrimReserve(cnt, cnt);
+        ImDrawCmd &draw_cmd = draw_list.CmdBuffer[draw_list.CmdBuffer.Size - 1];
+        draw_cmd.Flags |= ImDrawCmdFlags_LineStrip | ImDrawCmdFlags_TransformInVertexShader;
+
+
+
+        float half_weight = ImMax(1.0f, line_weight) * 0.5f;
+
+        Transformer2 transformer(*GImPlot->CurrentPlot);
+
+        draw_cmd.TransformData[0] = transformer.Tx.PixMin;
+        draw_cmd.TransformData[1] = transformer.Ty.PixMin;
+        draw_cmd.TransformData[2] = transformer.Tx.M;
+        draw_cmd.TransformData[3] = transformer.Ty.M;
+        draw_cmd.TransformData[4] = transformer.Tx.PltMin;
+        draw_cmd.TransformData[5] = transformer.Ty.PltMin;
+
+        ImDrawVert *write_pointer = draw_list._VtxWritePtr;
+
+        for (int i = 0; i < cnt; i += 1) {
+
+            draw_list._VtxWritePtr[0].pos.x = xs[i_offset + i + 0];
+            draw_list._VtxWritePtr[0].pos.y = ys[i_offset + i + 0];
+            draw_list._VtxWritePtr[0].col = col_line;
+            draw_list._VtxWritePtr[0].uv = tex_uv0;
+            draw_list._VtxWritePtr += 1;
+
+            draw_list._IdxWritePtr[0] = (ImDrawIdx)(draw_list._VtxCurrentIdx);
+            draw_list._VtxCurrentIdx += 1;
+            draw_list._IdxWritePtr += 1;
+            
+        }
+
+        i_offset += cnt;
+        prims -= cnt;
+    }
+
+    for (int i = 0; i < extra_vertices_to_get_to_multiple_of_four - 1; i += 1) {
+        draw_list._VtxWritePtr[0].pos.x = xs[prims - 1];
+        draw_list._VtxWritePtr[0].pos.y = ys[prims - 1];
+        draw_list._VtxWritePtr[0].col = col_line;
+        draw_list._VtxWritePtr[0].uv = tex_uv0;
+        draw_list._VtxWritePtr += 1;
+    }
+
+    for (int i = 0; i < extra_indices_to_get_to_multiple_of_six - 1; i += 1) {
+        draw_list._IdxWritePtr[0] = (ImDrawIdx)(draw_list._VtxCurrentIdx);
+        draw_list._IdxWritePtr += 1;
+    }
+
+    draw_list.AddDrawCmd();
+}
+
 template <template <class,class> class _Renderer, class _Getter1, class _Getter2, typename ...Args>
 void RenderPrimitives2(const _Getter1& getter1, const _Getter2& getter2, Args... args) {
     ImDrawList& draw_list = *GetPlotDrawList();
@@ -1582,6 +1655,13 @@ void PlotLineD(const char* label_id, const double* xs, const double* ys, int cou
     PlotLine(label_id, xs, ys, count, flags, offset, stride); 
 }
 
+void PlotLineDFast(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags,
+                   int offset, int stride) { 
+    PlotLineExFast(label_id, xs, ys, count, flags, offset, stride);
+    ImDrawList& draw_list = *GetPlotDrawList();
+    draw_list.AddDrawCmd();
+}
+
 template <typename _Getter>
 void PlotLineEx(const char* label_id, const _Getter& getter, ImPlotLineFlags flags) {
     if (BeginItemEx(label_id, Fitter1<_Getter>(getter), flags, ImPlotCol_Line)) {
@@ -1625,6 +1705,63 @@ void PlotLineEx(const char* label_id, const _Getter& getter, ImPlotLineFlags fla
             const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerFill]);
             RenderMarkers<_Getter>(getter, s.Marker, s.MarkerSize, s.RenderMarkerFill, col_fill, s.RenderMarkerLine, col_line, s.MarkerWeight);
         }
+        EndItem();
+    }
+}
+
+void PlotLineExFast(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags, int offset, int stride) {
+    // TODO: (vfs) Restore some of this functionality
+
+    if (BeginItem(label_id, flags, IMPLOT_AUTO)) {
+        //ImPlotPlot& plot = *GetCurrentPlot();
+        //if (plot.FitThisFrame && !ImHasFlag(flags, ImPlotItemFlags_NoFit))
+        //    fitter.Fit(plot.Axes[plot.CurrentX], plot.Axes[plot.CurrentY]);
+        //return true;
+    //}
+    //return false;
+    //if (BeginItemEx(label_id, Fitter1<_Getter>(getter), flags, ImPlotCol_Line)) {
+        if (count <= 0) {
+            EndItem();
+            return;
+        }
+        const ImPlotNextItemData& s = GetItemData();
+        if (count > 1) {
+            //if (ImHasFlag(flags, ImPlotLineFlags_Shaded) && s.RenderFill) {
+            //    const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_Fill]);
+            //    GetterOverrideY<_Getter> getter2(getter, 0);
+            //    RenderPrimitives2<RendererShaded>(getter,getter2,col_fill);
+            //}
+            if (s.RenderLine) {
+                const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_Line]);
+                if (ImHasFlag(flags,ImPlotLineFlags_Segments)) {
+                    //RenderPrimitives1<RendererLineSegments1>(getter,col_line,s.LineWeight);
+                }
+                else if (ImHasFlag(flags, ImPlotLineFlags_Loop)) {
+                    //if (ImHasFlag(flags, ImPlotLineFlags_SkipNaN))
+                    //    RenderPrimitives1<RendererLineStripSkip>(GetterLoop<_Getter>(getter),col_line,s.LineWeight);
+                    //else
+                    //   RenderPrimitives1<RendererLineStrip>(GetterLoop<_Getter>(getter),col_line,s.LineWeight);
+                }
+                else {
+                    if (ImHasFlag(flags, ImPlotLineFlags_SkipNaN)) {
+                        //RenderPrimitives1<RendererLineStripSkip>(getter,col_line,s.LineWeight);
+                    }
+                    else {
+                        RenderPrimitives1Fast(xs, ys, count, col_line, s.LineWeight);
+                    }
+                }
+            }
+        }
+        // render markers
+        //if (s.Marker != ImPlotMarker_None) {
+        //    if (ImHasFlag(flags, ImPlotLineFlags_NoClip)) {
+        //        PopPlotClipRect();
+        //        PushPlotClipRect(s.MarkerSize);
+        //    }
+        //    const ImU32 col_line = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerOutline]);
+        //    const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerFill]);
+        //    RenderMarkers<_Getter>(getter, s.Marker, s.MarkerSize, s.RenderMarkerFill, col_fill, s.RenderMarkerLine, col_line, s.MarkerWeight);
+        //}
         EndItem();
     }
 }
