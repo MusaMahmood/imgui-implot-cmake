@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(imgui-lib)
 
 SET (CMAKE_CXX_STANDARD 11)
+SET (CMAKE_VERBOSE_MAKEFILE OFF)
 
 set(LIB_NAME "imgui")
 
@@ -50,16 +51,7 @@ configure_msvc_runtime ()
 
 set(
     SRC_FILES 
-    imgui/imgui.cpp
-    imgui/imgui_widgets.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_tables.cpp
-    imgui/imgui_demo.cpp
-    implot/implot.cpp
-    implot/implot_items.cpp
-    implot/implot_demo.cpp
-    imgui/backends/imgui_impl_dx11.cpp
-    imgui/backends/imgui_impl_win32.cpp
+    imgui_unity.cpp
 )
 
 set(
