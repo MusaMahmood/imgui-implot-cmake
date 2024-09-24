@@ -2,15 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(imgui-lib)
 
-set(CMAKE_CXX_STANDARD 17)
-SET (CMAKE_VERBOSE_MAKEFILE ON)
-SET (VERSION "0.0.1" CACHE STRING "Version")
-SET (CMAKE_CXX_VISIBILITY_PRESET hidden)
-SET (CMAKE_C_VISIBILITY_PRESET hidden)
-SET (CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti -fno-threadsafe-statics -lgcc")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -fno-threadsafe-statics -lgcc")
+SET (CMAKE_CXX_STANDARD 11)
 
 set(LIB_NAME "imgui")
 
@@ -66,8 +58,6 @@ set(
     implot/implot.cpp
     implot/implot_items.cpp
     implot/implot_demo.cpp
-    imgui/backends/imgui_impl_glfw.cpp
-    imgui/backends/imgui_impl_opengl3.cpp
     imgui/backends/imgui_impl_dx11.cpp
     imgui/backends/imgui_impl_win32.cpp
 )
@@ -77,22 +67,10 @@ set(
     ${PROJECT_SOURCE_DIR}/imgui
     ${PROJECT_SOURCE_DIR}/implot
     ${PROJECT_SOURCE_DIR}/imgui/backends
-    #${CMAKE_HOME_DIRECTORY}/third_party
 )
-
-set(GLFW_DIR third_party/glfw)
-option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
-option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
-option(GLFW_INSTALL "Generate installation target" OFF)
-option(GLFW_DOCUMENT_INTERNALS "Include internals in documentation" OFF)
-add_subdirectory(${GLFW_DIR} binary_dir EXCLUDE_FROM_ALL)
-include_directories(${GLFW_DIR}/include)
-include_directories(${GLFW_DIR}/deps)
 
 set(
     LINK_LIB_DIRS
-    glfw
 )
 
 add_library(${LIB_NAME} STATIC ${SRC_FILES})
