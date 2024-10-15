@@ -1938,6 +1938,14 @@ void PlotBarsG(const char* label_id, ImPlotGetter getter_func, void* data, int c
     }
 }
 
+void PlotBarsD(const char* label_id, const double* values, int count, double bar_size, double shift, ImPlotBarsFlags flags, int offset, int stride) {
+    PlotBars(label_id, values, count, bar_size, shift, flags, offset, stride);
+}
+
+void PlotBarsD(const char* label_id, const double* xs, const double* ys, int count, double bar_size, ImPlotBarsFlags flags, int offset, int stride) {
+    PlotBars(label_id, xs, ys, count, bar_size, flags, offset, stride);
+}
+
 //-----------------------------------------------------------------------------
 // [SECTION] PlotBarGroups
 //-----------------------------------------------------------------------------
@@ -2022,6 +2030,10 @@ void PlotBarGroups(const char* const label_ids[], const T* values, int item_coun
 #define INSTANTIATE_MACRO(T) template IMPLOT_API void PlotBarGroups<T>(const char* const label_ids[], const T* values, int items, int groups, double width, double shift, ImPlotBarGroupsFlags flags);
 CALL_INSTANTIATE_FOR_NUMERIC_TYPES()
 #undef INSTANTIATE_MACRO
+
+void PlotBarGroupsD(const char* const label_ids[], const double* values, int item_count, int group_count, double group_size, double shift, ImPlotBarGroupsFlags flags) {
+    PlotBarGroups(label_ids, values, item_count, group_count, group_size, shift, flags);
+}
 
 //-----------------------------------------------------------------------------
 // [SECTION] PlotErrorBars
@@ -2110,6 +2122,14 @@ void PlotErrorBars(const char* label_id, const T* xs, const T* ys, const T* neg,
     template IMPLOT_API void PlotErrorBars<T>(const char* label_id, const T* xs, const T* ys, const T* neg, const T* pos, int count, ImPlotErrorBarsFlags flags, int offset, int stride);
 CALL_INSTANTIATE_FOR_NUMERIC_TYPES()
 #undef INSTANTIATE_MACRO
+
+void PlotErrorBarsD(const char* label_id, const double* xs, const double* ys, const double* err, int count, ImPlotErrorBarsFlags flags, int offset, int stride) {
+    PlotErrorBars(label_id, xs, ys, err, count, flags, offset, stride);
+}
+
+void PlotErrorBarsD(const char* label_id, const double* xs, const double* ys, const double* neg, const double* pos, int count, ImPlotErrorBarsFlags flags, int offset, int stride) {
+    PlotErrorBars(label_id, xs, ys, neg, pos, count, flags, offset, stride);
+}
 
 //-----------------------------------------------------------------------------
 // [SECTION] PlotStems
@@ -2220,6 +2240,14 @@ CALL_INSTANTIATE_FOR_NUMERIC_TYPES()
 //-----------------------------------------------------------------------------
 // [SECTION] PlotPieChart
 //-----------------------------------------------------------------------------
+
+void PlotPieChartD(const char* const label_ids[], const double* values, int count, double x, double y, double radius, ImPlotFormatter fmt, void* fmt_data, double angle0, ImPlotPieChartFlags flags) {
+    PlotPieChart(label_ids, values, count, x, y, radius, fmt, fmt_data, angle0, flags);
+}
+
+void PlotPieChartD(const char* const label_ids[], const double* values, int count, double x, double y, double radius, const char* label_fmt, double angle0, ImPlotPieChartFlags flags) {
+    PlotPieChart(label_ids, values, count, x, y, radius, label_fmt, angle0, flags);
+}
 
 IMPLOT_INLINE void RenderPieSlice(ImDrawList& draw_list, const ImPlotPoint& center, double radius, double a0, double a1, ImU32 col) {
     const float resolution = 50 / (2 * IM_PI);
@@ -2520,6 +2548,10 @@ void PlotHeatmap(const char* label_id, const T* values, int rows, int cols, doub
 #define INSTANTIATE_MACRO(T) template IMPLOT_API void PlotHeatmap<T>(const char* label_id, const T* values, int rows, int cols, double scale_min, double scale_max, const char* fmt, const ImPlotPoint& bounds_min, const ImPlotPoint& bounds_max, ImPlotHeatmapFlags flags);
 CALL_INSTANTIATE_FOR_NUMERIC_TYPES()
 #undef INSTANTIATE_MACRO
+
+void PlotHeatmapD(const char* label_id, const double* values, int rows, int cols, double scale_min, double scale_max, const char* label_fmt, const ImPlotPoint& bounds_min, const ImPlotPoint& bounds_max, ImPlotHeatmapFlags flags) {
+    PlotHeatmap(label_id, values, rows, cols, scale_min, scale_max, label_fmt, bounds_min, bounds_max, flags);
+}
 
 //-----------------------------------------------------------------------------
 // [SECTION] PlotHistogram
