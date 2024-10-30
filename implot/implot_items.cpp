@@ -1691,6 +1691,22 @@ void PlotScatter(const char* label_id, const T* xs, const T* ys, int count, ImPl
     return PlotScatterEx(label_id, getter, flags);
 }
 
+void PlotScatterF(const char* label_id, const float* values, int count, float xscale, float x0, ImPlotScatterFlags flags, int offset, int stride) {
+    PlotScatter(label_id, values, count, (double)xscale, (double)x0, flags, offset, stride);
+}
+
+void PlotScatterF(const char* label_id, const float* xs, const float* ys, int count, ImPlotScatterFlags flags, int offset, int stride) {
+    PlotScatter(label_id, xs, ys, count, flags, offset, stride);
+}
+
+void PlotScatterD(const char* label_id, const double* values, int count, double xscale, double x0, ImPlotScatterFlags flags, int offset, int stride) {
+    PlotScatter(label_id, values, count, xscale, x0, flags, offset, stride);
+}
+
+void PlotScatterD(const char* label_id, const double* xs, const double* ys, int count, ImPlotScatterFlags flags, int offset, int stride) {
+    PlotScatter(label_id, xs, ys, count, flags, offset, stride);
+}
+
 #define INSTANTIATE_MACRO(T) \
     template IMPLOT_API void PlotScatter<T>(const char* label_id, const T* values, int count, double xscale, double x0, ImPlotScatterFlags flags, int offset, int stride); \
     template IMPLOT_API void PlotScatter<T>(const char* label_id, const T* xs, const T* ys, int count, ImPlotScatterFlags flags, int offset, int stride);
