@@ -863,7 +863,10 @@ IMPLOT_API void PlotLineF(const char* label_id, const float* xs, const float* ys
 IMPLOT_API void PlotLineD(const char* label_id, const double* values, int count, double xscale=1, double x0=0, int offset=0, int stride=sizeof(double));
 IMPLOT_API void PlotLineD(const char* label_id, const double* xs, const double* ys, int count, ImPlotLineFlags flags=0, int offset=0, int stride=sizeof(double));
 
+IMPLOT_API void PlotShadedF(const char* label_id, const float* xs, const float* ys, int count, float yref=0, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(float));
 IMPLOT_API void PlotShadedF(const char* label_id, const float* xs, const float* ys1, const float* ys2, int count, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(float));
+
+IMPLOT_API void PlotShadedD(const char* label_id, const double* xs, const double* ys, int count, double yref=0, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(double));
 IMPLOT_API void PlotShadedD(const char* label_id, const double* xs, const double* ys1, const double* ys2, int count, ImPlotShadedFlags flags=0, int offset=0, int stride=sizeof(double));
 
 // Plots a standard 2D scatter plot. Default marker is ImPlotMarker_Circle.

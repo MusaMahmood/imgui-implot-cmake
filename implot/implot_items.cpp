@@ -1787,8 +1787,16 @@ void PlotStairsG(const char* label_id, ImPlotGetter getter_func, void* data, int
 // [SECTION] PlotShaded
 //-----------------------------------------------------------------------------
 
+void PlotShadedF(const char* label_id, const float* xs, const float* ys, int count, float yref, ImPlotShadedFlags flags, int offset, int stride) {
+    PlotShaded(label_id, xs, ys, count, yref, flags, offset, stride);
+}
+
 void PlotShadedF(const char* label_id, const float* xs, const float* ys1, const float* ys2, int count, ImPlotShadedFlags flags, int offset, int stride) {
     PlotShaded(label_id, xs, ys1, ys2, count, flags, offset, stride);
+}
+
+void PlotShadedD(const char* label_id, const double* xs, const double* ys, int count, double yref, ImPlotShadedFlags flags, int offset, int stride) {
+    PlotShaded(label_id, xs, ys, count, yref, flags, offset, stride);
 }
 
 void PlotShadedD(const char* label_id, const double* xs, const double* ys1, const double* ys2, int count, ImPlotShadedFlags flags, int offset, int stride) {
